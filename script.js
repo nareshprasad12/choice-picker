@@ -1,106 +1,53 @@
-const balance = document.getElementById("balance");
-const moneyPlus = document.getElementById("money-plus");
-const moneyMinus = document.getElementById("money-minus");
-const list = document.getElementById("list");
-const form = document.getElementById("form");
-const text = document.getElementById("text");
-const amount = document.getElementById("amount");
-const notification = document.getElementById("notification");
+const tagsElements = document.getElementById("tags");
+const textarea = document.getElementById("textarea");
 
-// const dummyTransactions = [
-//   { id: 1, text: "Flower", amount: -20 },
-//   { id: 2, text: "Salary", amount: 300 },
-//   { id: 3, text: "Book", amount: -10 },
-//   { id: 4, text: "Camera", amount: 150 },
-// ];
+const createTags = (input) => {
+  const tags = input
+    .split(",")
+    .filter((tag) => tag.trim() !== "")
+    .map((tag) => tag.trim());
+  tagsElements.innerHTML = "";
+  tags.forEach((tag) => {
+    const tagElement = document.createElement("span");
+    tagElement.classList.add("tag");
+    tagElement.innerText = tag;
+    tagsElements.appendChild(tagElement);
+  });
+};
 
-// let transactions = dummyTransactions;
+const pickRandomTag = () => {
+  const tags = document.querySelectorAll(".tag");
+  return tags[Math.floor(Math.random() * tags.length)];
+};
 
-const localStorageTransactions = JSON.parse(
-  localStorage.getItem("transactions")
-);
-let transactions =
-  localStorageTransactions !== null ? localStorageTransactions : [];
+const highlightTag = (tag) => tag.classList.add("highlight");
 
-function updateLocaleStorage() {
-  localStorage.setItem("transactions", JSON.stringify(transactions));
-}
+const unHighlightTag = (tag) => tag.classList.remove("highlight");
 
-function showNotification() {
-  notification.classList.add("show");
+const randomSelect = () => {
+  const times = 30;
+  const interval = setInterval(() => {
+    const randomTag = pickRandomTag();
+    highlightTag(randomTag);
+    setTimeout(() => {
+      unHighlightTag(randomTag);
+    }, 100);
+  }, 100);
+
   setTimeout(() => {
-    notification.classList.remove("show");
-  }, 2000);
-}
+    clearInterval(interval);
+    setTimeout(() => {
+      const randomTag = pickRandomTag();
+      highlightTag(randomTag);
+    }, 100);
+  }, times * 100);
+};
 
-function generateID() {
-  return Math.floor(Math.random() * 100000000);
-}
-
-function addTransaction(e) {
-  e.preventDefault();
-  if (text.value.trim() === "" || amount.value.trim() === "") {
-    showNotification();
-  } else {
-    const transaction = {
-      id: generateID(),
-      text: text.value,
-      amount: +amount.value,
-    };
-    transactions.push(transaction);
-    addTransactionDOM(transaction);
-    updateValues();
-    updateLocaleStorage();
-    text.value = "";
-    amount.value = "";
+textarea.focus();
+textarea.addEventListener("keyup", (e) => {
+  createTags(e.target.value);
+  if (e.key === "Enter") {
+    setTimeout(() => (e.target.value = ""), 10);
+    randomSelect();
   }
-}
-
-function addTransactionDOM(transaction) {
-  const sign = transaction.amount < 0 ? "-" : "+";
-  const item = document.createElement("li");
-  item.classList.add(sign === "+" ? "plus" : "minus");
-  item.innerHTML = `
-          ${transaction.text} <span>${sign}${Math.abs(transaction.amount)}</span
-          ><button class="delete-btn" onclick="removeTransaction(${
-            transaction.id
-          })"><i class="fa fa-times"></i></button>
-    `;
-  list.appendChild(item);
-}
-
-function updateValues() {
-  const amounts = transactions.map((transaction) => transaction.amount);
-  const total = amounts
-    .reduce((accumulator, value) => (accumulator += value), 0)
-    .toFixed(2);
-  const income = amounts
-    .filter((value) => value > 0)
-    .reduce((accumulator, value) => (accumulator += value), 0)
-    .toFixed(2);
-  const expense = (
-    amounts
-      .filter((value) => value < 0)
-      .reduce((accumulator, value) => (accumulator += value), 0) * -1
-  ).toFixed(2);
-  balance.innerText = `$${total}`;
-  moneyPlus.innerText = `$${income}`;
-  moneyMinus.innerText = `$${expense}`;
-}
-
-function removeTransaction(id) {
-  transactions = transactions.filter((transaction) => transaction.id !== id);
-  updateLocaleStorage();
-  init();
-}
-
-// Init
-function init() {
-  list.innerHTML = "";
-  transactions.forEach(addTransactionDOM);
-  updateValues();
-}
-
-init();
-
-form.addEventListener("submit", addTransaction);
+});
